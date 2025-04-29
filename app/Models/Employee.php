@@ -18,7 +18,18 @@ class Employee extends Model
         'designation',
         'salary',
         'token', // Foreign key
+        'site_name',
+        'location',
+        'face_metadata',
+        'clock_in',
+        'clock_out',
     ];
+
+    protected $casts = [
+        'location' => 'array',
+        'clock_in' => 'datetime',
+        'clock_out' => 'datetime',
+    ];    
 
     // Define the relationship with the Device model
     public function device()

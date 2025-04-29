@@ -40,6 +40,14 @@ class DeviceController extends Controller
                 return response()->json(['error' => 'Device name is required'], 200);
             }
 
+            $existingDevice = Device::where('device_id', $deviceId)->first();
+            if ($existingDevice) {
+                return response()->json([
+                    'message' => 'Device already registered',
+                    'device_token' => $existingDevice->token
+                ], 200);
+            }
+
             // Generate a unique device identifier (UUID)
             $deviceIdentifier = Str::uuid()->toString();
 
@@ -65,6 +73,33 @@ class DeviceController extends Controller
             return response()->json(['error' => 'Internal Server Error '.$e->getMessage()], 200);
         }
     }
+
+    public function approvedDevices()
+    {
+        try {
+            $platform = request()->header('platform');
+
+            if (!$platform) {
+                return response()->json(['error' => 'Platform is required'], 200);
+            }
+
+            if (!in_array($platform, ['android', 'ios', 'web'])) {
+                return response()->json(['error' => 'Platform must be either android, ios or web'], 200);
+            }
+
+            $devices = Device::where('status', 'Approved')->get();
+
+            return response()->json([
+                'message' => 'Approved devices fetched successfully',
+                'devices' => $devices
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'An error occurred while fetching approved devices: ' . $e->getMessage()
+            ], 200);
+        }
+    }
+
 
     public function deviceStatus(Request $request)
     {

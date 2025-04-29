@@ -19,6 +19,8 @@ class EmployeesController extends Controller
                 'designation' => 'required|string',
                 'salary' => 'required|numeric',
                 'token' => 'nullable|string',
+                'site_name' => 'nullable|string',
+                'face_metadata' => 'nullable|string',
             ]);
     
             $token = request()->header('device_token');
@@ -45,6 +47,8 @@ class EmployeesController extends Controller
                 'designation' => $request->designation,
                 'salary' => $request->salary,
                 'token' => $token, // token can be null
+                'site_name' => $request->site_name,
+                'face_metadata' => $request->face_metadata, 
             ]);
     
             return response()->json(['message' => 'Employee added successfully', 'status' => true], 200);
@@ -53,6 +57,13 @@ class EmployeesController extends Controller
         }
     
     }
+
+    public function getFaceEmbeddings()
+    {
+        $embeddings = Employee::select('emp_id', 'name', 'face_metadata')->get();
+        return response()->json(['message' => 'Face embeddings fetched successfully', 'data' => $embeddings], 200);
+    }
+
 
     // Update an existing employee
     public function update(Request $request, $id)

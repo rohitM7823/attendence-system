@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('devices_db', function (Blueprint $table) {
-            $table->string('token')->nullable()->after('device_id');
+            $table->string('token')->unique()->nullable()->after('device_id');
             // adds a nullable 'token' column after 'device_id'
         });
     }
