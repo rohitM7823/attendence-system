@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\FaceController;
 use App\Http\Controllers\EmployeesController;
-
+use App\Http\Controllers\SiteController;
 
 Route::post('/device/register', [DeviceController::class, 'register']);
 Route::get('/face/embeddings', [FaceController::class, 'getEmbeddings']);
@@ -17,4 +17,9 @@ Route::delete('/employee/{id}', [EmployeesController::class, 'delete']);
 Route::get('/employee/all', [EmployeesController::class, 'index']);
 Route::delete('/device/deleteAll', [DeviceController::class, 'deleteAllDevices']);
 Route::get('/devices/approved', [DeviceController::class, 'approvedDevices']);
-Route::post('/employee/face/metadata/all', [EmployeesController::class, 'getFaceEmbeddings']);
+Route::get('/employee/face/metadata/all', [EmployeesController::class, 'getFaceEmbeddings']);
+
+
+Route::post('/site/add', [SiteController::class, 'add']);
+Route::get('/sites', [SiteController::class, 'index']);
+Route::delete('/site/{id}', [SiteController::class, 'delete']);

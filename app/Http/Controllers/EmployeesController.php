@@ -16,12 +16,14 @@ class EmployeesController extends Controller
                 'name' => 'required|string',
                 'emp_id' => 'required|string|unique:employees_db,emp_id',
                 'address' => 'required|string',
-                'designation' => 'required|string',
                 'salary' => 'required|numeric',
                 'token' => 'nullable|string',
                 'site_name' => 'nullable|string',
                 'face_metadata' => 'nullable|string',
+                'aadhar_card' => 'required|string',
+                'mobile_number' => 'required|string',
             ]);
+            
     
             $token = request()->header('device_token');
             $platform = request()->header('platform');
@@ -49,6 +51,8 @@ class EmployeesController extends Controller
                 'token' => $token, // token can be null
                 'site_name' => $request->site_name,
                 'face_metadata' => $request->face_metadata, 
+                'aadhar_card' => $request->aadhar_card,
+                'mobile_number' => $request->mobile_number,
             ]);
     
             return response()->json(['message' => 'Employee added successfully', 'status' => true], 200);
@@ -88,11 +92,11 @@ class EmployeesController extends Controller
                 'name' => 'sometimes|required|string',
                 'emp_id' => 'sometimes|required|string|unique:employees_db,emp_id,' . $employee->id,
                 'address' => 'sometimes|required|string',
-                'designation' => 'sometimes|required|string',
                 'salary' => 'sometimes|required|numeric',
-                //'token' => 'nullable|string',
+                'aadhar_card' => 'sometimes|required|string',
+                'mobile_number' => 'sometimes|required|string',
             ]);
-    
+            
         
     
             if ($token) {
@@ -103,7 +107,15 @@ class EmployeesController extends Controller
                 $employee->token = $token;
             }
     
-            $employee->update($request->only(['name', 'emp_id', 'address', 'designation', 'salary']));
+            $employee->update($request->only([
+                'name',
+                'emp_id',
+                'address',
+                'salary',
+                'aadhar_card',
+                'mobile_number',
+            ]));
+            
     
             return response()->json(['message' => 'Employee updated successfully', 'employee' => $employee], 200);
         } catch (\Exception $e) {

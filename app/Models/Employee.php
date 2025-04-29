@@ -15,14 +15,15 @@ class Employee extends Model
         'name',
         'emp_id',
         'address',
-        'designation',
         'salary',
-        'token', // Foreign key
+        'token',
         'site_name',
         'location',
         'face_metadata',
         'clock_in',
         'clock_out',
+        'aadhar_card',
+        'mobile_number',
     ];
 
     protected $casts = [
