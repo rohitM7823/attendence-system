@@ -15,7 +15,7 @@ class Employee extends Model
         'name',
         'emp_id',
         'address',
-        'salary',
+        'account_number', // changed from 'salary'
         'token',
         'site_name',
         'location',
@@ -24,12 +24,14 @@ class Employee extends Model
         'clock_out',
         'aadhar_card',
         'mobile_number',
+        'shift_id', // ✅ Add this
     ];
 
     protected $casts = [
         'location' => 'array',
         'clock_in' => 'datetime',
         'clock_out' => 'datetime',
+        'account_number' => 'string',
     ];    
 
     // Define the relationship with the Device model
@@ -37,4 +39,10 @@ class Employee extends Model
     {
         return $this->belongsTo(Device::class, 'token', 'token');
     }
+
+    public function shift()
+    {
+        return $this->belongsTo(Shift::class, 'shift_id');
+    }
+
 }
