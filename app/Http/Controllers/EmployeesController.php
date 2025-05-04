@@ -126,9 +126,12 @@ public function getEmployeeSiteRadius($employeeId)
 
         return response()->json([
             'message' => 'Site radius and location retrieved successfully',
-            'site_name' => $site->name,
-            'radius' => $site->radius,
-            'location' => $site->location,
+            'site' => [
+                'site_name' => $site->name,
+                'radius' => $site->radius,
+                'location' => $site->location,
+            ]
+        
         ], 200);
     } catch (\Exception $e) {
         return response()->json(['error' => 'Error retrieving site data: ' . $e->getMessage()], 500);
@@ -186,6 +189,38 @@ public function getEmployeeSiteRadius($employeeId)
             return response()->json(['error' => 'Error while updating employee: ' . $e->getMessage()], 200);
         }
     }
+
+
+    
+    public function updateAttendanceTime(Request $request, $id)
+    {
+        $request->validate([
+            'clock_in' => 'nullable|date_format:Y-m-d H:i:s',
+            'clock_out' => 'nullable|date_format:Y-m-d H:i:s',
+        ]);
+    
+        $employee = Employee::find($id);
+    
+        if (!$employee) {
+            return response()->json(['message' => 'Employee not found'], 404);
+        }
+    
+        if ($request->filled('clock_in')) {
+            $employee->clock_in = $request->input('clock_in');
+        }
+    
+        if ($request->filled('clock_out')) {
+            $employee->clock_out = $request->input('clock_out');
+        }
+    
+        $employee->save();
+    
+        return response()->json([
+            'message' => 'Attendance time updated successfully',
+            'employee' => $employee
+        ]);
+    }
+    
     
 
     // Fetch all employees
