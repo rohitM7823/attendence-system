@@ -25,7 +25,7 @@ Route::get('/employee/all', [EmployeesController::class, 'index']);
 Route::get('/employee/face/metadata/all', [EmployeesController::class, 'getFaceEmbeddings']);
 Route::get('/employee/{id}', [EmployeesController::class, 'show']);
 Route::get('/employee/{id}/site-radius', [EmployeesController::class, 'getEmployeeSiteRadius']);
-Route::post('/employee/{id}/attendance', [EmployeesController::class, 'updateAttendanceTime']);
+Route::post('/employee/{id}/attendance-take', [EmployeesController::class, 'updateAttendanceTime']);
 
 
 Route::post('/site/add', [SiteController::class, 'add']);

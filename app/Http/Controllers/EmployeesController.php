@@ -198,7 +198,7 @@ public function getEmployeeSiteRadius($employeeId)
             'clock_in' => 'nullable|date_format:Y-m-d H:i:s',
             'clock_out' => 'nullable|date_format:Y-m-d H:i:s',
         ]);
-    
+
         $employee = Employee::find($id);
     
         if (!$employee) {
@@ -218,7 +218,7 @@ public function getEmployeeSiteRadius($employeeId)
         return response()->json([
             'message' => 'Attendance time updated successfully',
             'employee' => $employee
-        ]);
+        ], 200);
     }
     
     
