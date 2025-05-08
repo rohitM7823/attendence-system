@@ -19,8 +19,8 @@ Route::get('/devices/approved', [DeviceController::class, 'approvedDevices']);
 
 
 Route::post('/employee', [EmployeesController::class, 'add']);
-Route::post('/employee/{id}', [EmployeesController::class, 'update']);
-Route::delete('/employee/{id}', [EmployeesController::class, 'delete']);
+Route::post('/employee/{id}/update', [EmployeesController::class, 'update']);
+Route::delete('/employee/{id}/delete', [EmployeesController::class, 'delete']);
 Route::get('/employee/all', [EmployeesController::class, 'index']);
 Route::get('/employee/face/metadata/all', [EmployeesController::class, 'getFaceEmbeddings']);
 Route::get('/employee/{id}', [EmployeesController::class, 'show']);

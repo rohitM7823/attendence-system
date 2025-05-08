@@ -140,55 +140,53 @@ public function getEmployeeSiteRadius($employeeId)
 
 
 
-    // Update an existing employee
-    public function update(Request $request, $id)
-    {
-        try {
-            $platform = $request->header('platform');
-            $token = $request->header('device_token');
-            $employee = Employee::find($id);
-    
-            if (!$platform || !in_array($platform, ['android', 'ios', 'web'])) {
-                return response()->json(['error' => 'Platform must be android, ios, or web'], 200);
-            }
-    
-            if (!$employee) {
-                return response()->json(['error' => 'Employee not found'], 404);
-            }
-    
-            $request->validate([
-                'name' => 'sometimes|required|string',
-                'emp_id' => 'sometimes|required|string|unique:employees_db,emp_id,' . $employee->id,
-                'address' => 'sometimes|required|string',
-                'account_number' => 'sometimes|required|string',
-                'aadhar_card' => 'sometimes|required|string',
-                'mobile_number' => 'sometimes|required|string',
-                'shift_id' => 'sometimes|required|exists:shifts_db,id', // ✅ validate shift
-            ]);
-    
-            if ($token) {
-                $device = Device::where('token', $token)->first();
-                if (!$device) {
-                    return response()->json(['error' => 'Invalid token provided'], 200);
-                }
-                $employee->token = $token;
-            }
-    
-            $employee->update($request->only([
-                'name',
-                'emp_id',
-                'address',
-                'account_number',
-                'aadhar_card',
-                'mobile_number',
-                'shift_id', // ✅ update shift
-            ]));
-    
-            return response()->json(['message' => 'Employee updated successfully', 'status' => true], 200);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Error while updating employee: ' . $e->getMessage()], 200);
+public function update(Request $request, $id)
+{
+    try {
+        $platform = $request->header('platform');
+        $token = $request->header('device_token');
+        $employee = Employee::find($id);
+
+        // Platform validation
+        if (!$platform || !in_array($platform, ['android', 'ios', 'web'])) {
+            return response()->json(['error' => 'Platform must be android, ios, or web'], 200);
         }
+
+        // Check if employee exists
+        if (!$employee) {
+            return response()->json(['error' => 'Employee not found'], 404);
+        }
+
+        // Validation rules: make all fields nullable
+        $request->validate([
+            'name' => 'nullable|string',
+            'emp_id' => 'nullable|string|unique:employees_db,emp_id,' . $employee->id,
+            'address' => 'nullable|string',
+            'account_number' => 'nullable|string',
+            'aadhar_card' => 'nullable|string',
+            'mobile_number' => 'nullable|string',
+            'shift_id' => 'nullable|exists:shifts_db,id',
+            'site_name' => 'nullable|string',
+        ]);
+
+        // Update only the fields that are present in the request
+        $employee->update(array_filter($request->only([
+            'name',
+            'emp_id',
+            'address',
+            'account_number',
+            'aadhar_card',
+            'mobile_number',
+            'shift_id',
+            'site_name'
+        ]))); 
+
+        return response()->json(['message' => 'Employee updated successfully', 'status' => true], 200);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Error while updating employee: ' . $e->getMessage()], 200);
     }
+}
+
 
 
     
@@ -276,11 +274,6 @@ public function getEmployeeSiteRadius($employeeId)
 
             if (!$employee) {
                 return response()->json(['error' => 'Employee not found'], 200);
-            }
-
-            $device = Device::where('token', $employee->token)->first();
-            if ($device) {
-                $device->delete();
             }
 
             $employee->delete();
