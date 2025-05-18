@@ -6,6 +6,7 @@ use App\Http\Controllers\FaceController;
 use App\Http\Controllers\EmployeesController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\ShiftController;
+use App\Http\Controllers\AdminsController;
 
 
 Route::get('/face/embeddings', [FaceController::class, 'getEmbeddings']);
@@ -35,3 +36,10 @@ Route::delete('/site/{id}', [SiteController::class, 'delete']);
 Route::get('/shifts', [ShiftController::class, 'index']);
 Route::get('/shifts/{id}', [ShiftController::class, 'show']);
 Route::post('/shifts', [ShiftController::class, 'storeOrUpdate']);
+
+
+Route::post('/admin/login', [AdminsController::class, 'login']);
+Route::post('/admin/forgot-password', [AdminsController::class, 'forgotPassword']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/admin/logout', [AdminsController::class, 'logout']);
+});
