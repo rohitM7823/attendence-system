@@ -10,53 +10,53 @@ class EmployeesController extends Controller
 {
     // Add a new employee
     public function add(Request $request)
-{
-    try {
-        $request->validate([
-            'name' => 'required|string',
-            'emp_id' => 'required|string|unique:employees_db,emp_id',
-            'address' => 'required|string',
-            'account_number' => 'required|string',
-            'token' => 'nullable|string',
-            'site_name' => 'nullable|string',
-            'face_metadata' => 'nullable|string',
-            'aadhar_card' => 'required|string',
-            'mobile_number' => 'required|string',
-            'shift_id' => 'required|exists:shifts_db,id', // ✅ validate shift
-        ]);
+    {
+        try {
+            $request->validate([
+                'name' => 'required|string',
+                'emp_id' => 'required|string|unique:employees_db,emp_id',
+                'address' => 'required|string',
+                'account_number' => 'required|string',
+                'token' => 'nullable|string',
+                'site_name' => 'nullable|string',
+                'face_metadata' => 'nullable|string',
+                'aadhar_card' => 'required|string',
+                'mobile_number' => 'required|string',
+                'shift_id' => 'required|exists:shifts_db,id', // ✅ validate shift
+            ]);
 
-        $token = $request->header('device_token');
-        $platform = $request->header('platform');
+            $token = $request->header('device_token');
+            $platform = $request->header('platform');
 
-        if (!$platform || !in_array($platform, ['android', 'ios', 'web'])) {
-            return response()->json(['error' => 'Platform must be android, ios, or web'], 200);
-        }
-
-        if ($token) {
-            $device = Device::where('token', $token)->first();
-            if (!$device) {
-                return response()->json(['error' => 'Invalid token provided'], 200);
+            if (!$platform || !in_array($platform, ['android', 'ios', 'web'])) {
+                return response()->json(['error' => 'Platform must be android, ios, or web'], 200);
             }
+
+            if ($token) {
+                $device = Device::where('token', $token)->first();
+                if (!$device) {
+                    return response()->json(['error' => 'Invalid token provided'], 200);
+                }
+            }
+
+            $employee = Employee::create([
+                'name' => $request->name,
+                'emp_id' => $request->emp_id,
+                'address' => $request->address,
+                'account_number' => $request->account_number,
+                'token' => $token,
+                'site_name' => $request->site_name,
+                'face_metadata' => $request->face_metadata,
+                'aadhar_card' => $request->aadhar_card,
+                'mobile_number' => $request->mobile_number,
+                'shift_id' => $request->shift_id, // ✅ assign shift
+            ]);
+
+            return response()->json(['message' => 'Employee added successfully', 'status' => true], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error while adding employee: ' . $e->getMessage()], 200);
         }
-
-        $employee = Employee::create([
-            'name' => $request->name,
-            'emp_id' => $request->emp_id,
-            'address' => $request->address,
-            'account_number' => $request->account_number,
-            'token' => $token,
-            'site_name' => $request->site_name,
-            'face_metadata' => $request->face_metadata,
-            'aadhar_card' => $request->aadhar_card,
-            'mobile_number' => $request->mobile_number,
-            'shift_id' => $request->shift_id, // ✅ assign shift
-        ]);
-
-        return response()->json(['message' => 'Employee added successfully', 'status' => true], 200);
-    } catch (\Exception $e) {
-        return response()->json(['error' => 'Error while adding employee: ' . $e->getMessage()], 200);
     }
-}
 
 
     public function getFaceEmbeddings()
