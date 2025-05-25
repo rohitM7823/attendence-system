@@ -25,6 +25,7 @@ class Employee extends Model
         'aadhar_card',
         'mobile_number',
         'shift_id', // ✅ Add this
+        'department_id', // ✅ added here
     ];
 
     protected $casts = [
@@ -44,5 +45,9 @@ class Employee extends Model
     {
         return $this->belongsTo(Shift::class, 'shift_id');
     }
-
+    
+    public function department()
+    {
+        return $this->belongsTo(Department::class, 'department_id');
+    }
 }

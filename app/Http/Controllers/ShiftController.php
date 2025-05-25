@@ -39,31 +39,61 @@ class ShiftController extends Controller
         return response()->json($shift);
     }
 
-    public function storeOrUpdate(Request $request)
-    {
-        $request->validate([
+  public function storeOrUpdate(Request $request)
+{
+    try {
+        $validated = $request->validate([
             'clock_in' => 'required|date',
+            'id' => 'nullable|integer|exists:shifts_db,id',
         ]);
 
-        $clockIn = Carbon::parse($request->clock_in);
+        $clockIn = Carbon::parse($validated['clock_in']);
         $clockOut = $clockIn->copy()->addHours(8);
 
-        $shift = Shift::updateOrCreate(
-            ['id' => $request->id], // if `id` exists, it updates; otherwise, creates new
-            [
-                'clock_in' => $clockIn,
-                'clock_out' => $clockOut,
-                'clock_in_window' => json_encode([
-                    'start' => $clockIn->copy()->subMinutes(30)->toDateTimeString(),
-                    'end' => $clockIn->copy()->addMinutes(30)->toDateTimeString(),
-                ]),
-                'clock_out_window' => json_encode([
-                    'start' => $clockOut->copy()->subMinutes(120)->toDateTimeString(),
-                    'end' => $clockOut->copy()->addMinutes(120)->toDateTimeString(),
-                ]),
-            ]
-        );
+        $data = [
+            'clock_in' => $clockIn,
+            'clock_out' => $clockOut,
+            'clock_in_window' => json_encode([
+                'start' => $clockIn->copy()->subMinutes(30)->toDateTimeString(),
+                'end' => $clockIn->copy()->addMinutes(30)->toDateTimeString(),
+            ]),
+            'clock_out_window' => json_encode([
+                'start' => $clockOut->copy()->subMinutes(120)->toDateTimeString(),
+                'end' => $clockOut->copy()->addMinutes(120)->toDateTimeString(),
+            ]),
+        ];
 
-        return response()->json($shift, $request->id ? 200 : 201);
+        if (!empty($validated['id'])) {
+            $shift = Shift::find($validated['id']);
+            if (!$shift) {
+                return response()->json(['error' => 'Shift not found for update.'], 404);
+            }
+
+            $shift->update($data);
+            return response()->json([
+                'message' => 'Shift updated successfully.',
+                'shift' => $shift,
+            ], 200);
+        } else {
+            $shift = Shift::create($data);
+            return response()->json([
+                'message' => 'Shift created successfully.',
+                'shift' => $shift,
+            ], 201);
+        }
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'error' => 'Validation failed',
+            'details' => $e->errors(),
+        ], 422);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'An unexpected error occurred',
+            'message' => $e->getMessage(),
+        ], 500);
     }
+}
+
+
 }

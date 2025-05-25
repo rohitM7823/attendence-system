@@ -23,6 +23,7 @@ class EmployeesController extends Controller
                 'aadhar_card' => 'required|string',
                 'mobile_number' => 'required|string',
                 'shift_id' => 'required|exists:shifts_db,id', // ✅ validate shift
+                'department_id' => 'nullable|exists:departments,id',
             ]);
 
             $token = $request->header('device_token');
@@ -50,6 +51,7 @@ class EmployeesController extends Controller
                 'aadhar_card' => $request->aadhar_card,
                 'mobile_number' => $request->mobile_number,
                 'shift_id' => $request->shift_id, // ✅ assign shift
+                'department_id' => $request->department_id,
             ]);
 
             return response()->json(['message' => 'Employee added successfully', 'status' => true], 200);
@@ -70,7 +72,7 @@ class EmployeesController extends Controller
 public function show($id)
 {
     try {
-        $employee = Employee::with('shift')->find($id);
+        $employee = Employee::with('shift', 'department')->findOrFail($id);
 
         if (!$employee) {
             return response()->json(['error' => 'Employee not found'], 404);
@@ -96,6 +98,10 @@ public function show($id)
                 'clock_out' => $employee->shift->clock_out,
                 'clock_in_window' => json_decode($employee->shift->clock_in_window),
                 'clock_out_window' => json_decode($employee->shift->clock_out_window),
+            ] : null,
+                'department' => $employee->department ? [
+                'id' => $employee->department->id,
+                'name' => $employee->department->name,
             ] : null,
         ];
 
@@ -167,6 +173,7 @@ public function update(Request $request, $id)
             'mobile_number' => 'nullable|string',
             'shift_id' => 'nullable|exists:shifts_db,id',
             'site_name' => 'nullable|string',
+            'department_id' => 'nullable|exists:departments,id',
         ]);
 
         // Update only the fields that are present in the request
@@ -178,7 +185,8 @@ public function update(Request $request, $id)
             'aadhar_card',
             'mobile_number',
             'shift_id',
-            'site_name'
+            'site_name',
+            'department_id',
         ]))); 
 
         return response()->json(['message' => 'Employee updated successfully', 'status' => true], 200);
@@ -222,11 +230,26 @@ public function update(Request $request, $id)
     
 
     // Fetch all employees
-    public function index()
+    public function index(Request $request)
     {
-        $employees = Employee::with('shift')->get();
-    
-        $data = $employees->map(function ($employee) {
+        $query = Employee::with('shift', 'department');
+
+        // Search functionality
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%$search%")
+                ->orWhere('emp_id', 'like', "%$search%")
+                ->orWhere('mobile_number', 'like', "%$search%");
+            });
+        }
+
+        // Pagination
+        $perPage = $request->get('limit', 10); // default 10 per page
+        $employees = $query->paginate($perPage);
+
+        // Format data
+        $data = $employees->getCollection()->map(function ($employee) {
             return [
                 'id' => $employee->id,
                 'name' => $employee->name,
@@ -248,14 +271,25 @@ public function update(Request $request, $id)
                     'clock_in_window' => json_decode($employee->shift->clock_in_window),
                     'clock_out_window' => json_decode($employee->shift->clock_out_window),
                 ] : null,
+                'department' => $employee->department ? [
+                    'id' => $employee->department->id,
+                    'name' => $employee->department->name,
+                ] : null,
             ];
         });
-    
+
         return response()->json([
-            'message' => 'All employees fetched successfully',
+            'message' => 'Employees fetched successfully',
             'employees' => $data,
+            'pagination' => [
+                'current_page' => $employees->currentPage(),
+                'last_page' => $employees->lastPage(),
+                'per_page' => $employees->perPage(),
+                'total' => $employees->total(),
+            ],
         ], 200);
     }
+
     
 
     // Delete an employee
