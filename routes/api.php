@@ -29,6 +29,7 @@ Route::get('/employee/face/metadata/all', [EmployeesController::class, 'getFaceE
 Route::get('/employee/{id}', [EmployeesController::class, 'show']);
 Route::get('/employee/{id}/site-radius', [EmployeesController::class, 'getEmployeeSiteRadius']);
 Route::post('/employee/{id}/attendance-take', [EmployeesController::class, 'updateAttendanceTime']);
+Route::post('/employee/attendance-report-pdf', [EmployeesController::class, 'downloadAttendanceReportPdf']);
 
 
 Route::post('/site/add', [SiteController::class, 'add']);

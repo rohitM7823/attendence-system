@@ -5,9 +5,90 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Employee;
 use App\Models\Device;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\View;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Exception;
 
 class EmployeesController extends Controller
 {
+
+
+    // Generate attendance report in PDF based on selected date range
+    public function downloadAttendanceReportPdf(Request $request)
+    {
+        try {
+            $request->validate([
+                'start_date' => 'required|date',
+                'end_date' => 'required|date|after_or_equal:start_date',
+            ]);
+
+            $startDate = Carbon::parse($request->start_date);
+            $endDate = Carbon::parse($request->end_date);
+            $dateRange = collect();
+
+            for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+                $dateRange->push($date->format('Y-m-d'));
+            }
+
+            $employees = Employee::select('emp_id', 'name', 'clock_in', 'clock_out')
+                ->get();
+
+            $reportData = [];
+
+            foreach ($employees as $employee) {
+                $dailyStatus = [];
+                foreach ($dateRange as $date) {
+                    $clockIn = $employee->clock_in ? Carbon::parse($employee->clock_in)->format('Y-m-d') : null;
+                    $clockOut = $employee->clock_out ? Carbon::parse($employee->clock_out)->format('Y-m-d') : null;
+
+                    if ($clockIn === $date && $clockOut === $date) {
+                        $dailyStatus[] = 'P';
+                    } else {
+                        $dailyStatus[] = 'A';
+                    }
+                }
+
+                $reportData[] = [
+                    'emp_id' => $employee->emp_id,
+                    'name' => $employee->name,
+                    'status' => $dailyStatus,
+                ];
+            }
+
+            $pdf = Pdf::loadView('attendance.report', [
+                'reportData' => $reportData,
+                'dateRange' => $dateRange,
+                'start' => $startDate->toFormattedDateString(),
+                'end' => $endDate->toFormattedDateString()
+            ])->setPaper('a4', 'landscape');
+
+            $filename = 'attendance_report_' . now()->format('Ymd_His') . '.pdf';
+            Storage::disk('public')->put($filename, $pdf->output());
+
+            $url = asset('storage/' . $filename);
+
+            return response()->json([
+                'message' => 'Attendance PDF generated successfully.',
+                'download_url' => $url
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => 'Validation error',
+                'messages' => $e->errors()
+            ], 422);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'Failed to generate PDF',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
     // Add a new employee
     public function add(Request $request)
     {
