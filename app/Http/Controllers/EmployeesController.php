@@ -16,7 +16,6 @@ use Exception;
 class EmployeesController extends Controller
 {
 
-
     // Generate attendance report in PDF based on selected date range
     public function downloadAttendanceReportPdf(Request $request)
     {
@@ -26,30 +25,50 @@ class EmployeesController extends Controller
                 'end_date' => 'required|date|after_or_equal:start_date',
             ]);
 
-            $startDate = Carbon::parse($request->start_date);
-            $endDate = Carbon::parse($request->end_date);
+            $startDate = Carbon::parse($request->start_date)->startOfDay();
+            $endDate = Carbon::parse($request->end_date)->endOfDay();
             $dateRange = collect();
 
             for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
-                $dateRange->push($date->format('Y-m-d'));
+                $dateRange->push($date->copy());
             }
 
-            $employees = Employee::select('emp_id', 'name', 'clock_in', 'clock_out')
-                ->get();
-
+            $employees = \App\Models\Employee::with('shift')->get();
             $reportData = [];
 
             foreach ($employees as $employee) {
                 $dailyStatus = [];
-                foreach ($dateRange as $date) {
-                    $clockIn = $employee->clock_in ? Carbon::parse($employee->clock_in)->format('Y-m-d') : null;
-                    $clockOut = $employee->clock_out ? Carbon::parse($employee->clock_out)->format('Y-m-d') : null;
 
-                    if ($clockIn === $date && $clockOut === $date) {
-                        $dailyStatus[] = 'P';
-                    } else {
-                        $dailyStatus[] = 'A';
+                foreach ($dateRange as $date) {
+                    $status = 'A'; // Default to Absent
+
+                    $shift = $employee->shift;
+                    if (!$shift || !$employee->clock_in || !$employee->clock_out) {
+                        $dailyStatus[] = $status;
+                        continue;
                     }
+
+                    $clockInWindow = collect(json_decode($shift->clock_in_window, true));
+                    $clockOutWindow = collect(json_decode($shift->clock_out_window, true));
+
+                    $clockInWindowStart = Carbon::parse($clockInWindow['start'])->setDate($date->year, $date->month, $date->day);
+                    $clockInWindowEnd = Carbon::parse($clockInWindow['end'])->setDate($date->year, $date->month, $date->day);
+                    $clockOutWindowStart = Carbon::parse($clockOutWindow['start'])->setDate($date->year, $date->month, $date->day);
+                    $clockOutWindowEnd = Carbon::parse($clockOutWindow['end'])->setDate($date->year, $date->month, $date->day);
+
+                    $empClockIn = Carbon::parse($employee->clock_in);
+                    $empClockOut = Carbon::parse($employee->clock_out);
+
+                    if (
+                        $empClockIn->between($clockInWindowStart, $clockInWindowEnd) &&
+                        $empClockOut->between($clockOutWindowStart, $clockOutWindowEnd) &&
+                        $empClockIn->isSameDay($date) &&
+                        $empClockOut->isSameDay($date)
+                    ) {
+                        $status = 'P';
+                    }
+
+                    $dailyStatus[] = $status;
                 }
 
                 $reportData[] = [
@@ -59,15 +78,16 @@ class EmployeesController extends Controller
                 ];
             }
 
-            $pdf = Pdf::loadView('attendance.report', [
+            // ✅ Reference the Blade view `attendance.report`
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('attendance.report', [
                 'reportData' => $reportData,
-                'dateRange' => $dateRange,
+                'dateRange' => $dateRange->map(fn($d) => $d->format('Y-m-d')),
                 'start' => $startDate->toFormattedDateString(),
                 'end' => $endDate->toFormattedDateString()
             ])->setPaper('a4', 'landscape');
 
             $filename = 'attendance_report_' . now()->format('Ymd_His') . '.pdf';
-            Storage::disk('public')->put($filename, $pdf->output());
+            \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $pdf->output());
 
             $url = asset('storage/' . $filename);
 
@@ -80,13 +100,14 @@ class EmployeesController extends Controller
                 'error' => 'Validation error',
                 'messages' => $e->errors()
             ], 422);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Failed to generate PDF',
                 'message' => $e->getMessage()
             ], 500);
         }
     }
+
 
 
     // Add a new employee
