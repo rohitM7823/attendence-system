@@ -89,7 +89,7 @@ class EmployeesController extends Controller
             $filename = 'attendance_report_' . now()->format('Ymd_His') . '.pdf';
             \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $pdf->output());
 
-            $url = asset('storage/' . $filename);
+            $url = asset('storage/app/public' . $filename);
 
             return response()->json([
                 'message' => 'Attendance PDF generated successfully.',
