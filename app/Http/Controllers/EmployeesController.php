@@ -87,7 +87,7 @@ class EmployeesController extends Controller
             ])->setPaper('a4', 'landscape');
 
             $filename = 'attendance_report_' . now()->format('Ymd_His') . '.pdf';
-            \Illuminate\Support\Facades\Storage::disk('app/public')->put($filename, $pdf->output());
+            \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $pdf->output());
 
             $url = asset('storage/' . $filename);
 
