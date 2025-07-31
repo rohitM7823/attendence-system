@@ -13,35 +13,155 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Exception;
 
-class EmployeesController extends Controller
-{
+class EmployeesController extends Controller {
+
+    /**
+     * Get monthly attendance report for employees with optional site, department, and month filters.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getMonthlyAttendanceReport(Request $request)
+    {
+        try {
+            $request->validate([
+                'month' => 'required|date_format:Y-m', // e.g. 2025-07
+                'site_name' => 'nullable|string',
+                'department_id' => 'nullable|integer',
+                'page' => 'nullable|integer|min:1',
+                'limit' => 'nullable|integer|min:1|max:100',
+            ]);
+
+            $month = $request->input('month');
+            $siteName = $request->input('site_name');
+            $departmentId = $request->input('department_id');
+            $page = $request->input('page', 1);
+            $limit = $request->input('limit', 10);
+
+            // Get start and end date of the month
+            $startDate = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+            $endDate = $startDate->copy()->endOfMonth();
+            $dateRange = collect();
+            for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+                $dateRange->push($date->copy());
+            }
+
+            // Build employee query with optional filters
+            $employeeQuery = Employee::with('shift');
+            if ($siteName) {
+                $employeeQuery->where('site_name', $siteName);
+            }
+            if ($departmentId) {
+                $employeeQuery->where('department_id', $departmentId);
+            }
+            
+            // Apply pagination
+            $employees = $employeeQuery->paginate($limit, ['*'], 'page', $page);
+
+            $attendenceReport = [];
+            foreach ($employees as $employee) {
+                $daily = [];
+                foreach ($dateRange as $date) {
+                    $status = 'A'; // Default to Absent
+                    $shift = $employee->shift;
+                    if (!$shift || !$employee->clock_in || !$employee->clock_out) {
+                        $daily[] = $status;
+                        continue;
+                    }
+
+                    $clockInWindow = collect(json_decode($shift->clock_in_window, true));
+                    $clockOutWindow = collect(json_decode($shift->clock_out_window, true));
+
+                    $clockInWindowStart = Carbon::parse($clockInWindow['start'])->setDate($date->year, $date->month, $date->day);
+                    $clockInWindowEnd = Carbon::parse($clockInWindow['end'])->setDate($date->year, $date->month, $date->day);
+                    $clockOutWindowStart = Carbon::parse($clockOutWindow['start'])->setDate($date->year, $date->month, $date->day);
+                    $clockOutWindowEnd = Carbon::parse($clockOutWindow['end'])->setDate($date->year, $date->month, $date->day);
+
+                    $empClockIn = Carbon::parse($employee->clock_in);
+                    $empClockOut = Carbon::parse($employee->clock_out);
+
+                    if (
+                        $empClockIn->between($clockInWindowStart, $clockInWindowEnd) &&
+                        $empClockOut->between($clockOutWindowStart, $clockOutWindowEnd) &&
+                        $empClockIn->isSameDay($date) &&
+                        $empClockOut->isSameDay($date)
+                    ) {
+                        $status = 'P';
+                    }
+                    $daily[] = $status;
+                }
+                $attendenceReport[] = [
+                    'name' => $employee->name,
+                    'empId' => $employee->emp_id,
+                    'daily' => $daily,
+                ];
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => '',
+                'attendence_report' => $attendenceReport,
+                'pagination' => [
+                    'current_page' => $employees->currentPage(),
+                    'last_page' => $employees->lastPage(),
+                    'per_page' => $employees->perPage(),
+                    'total' => $employees->total(),
+                    'from' => $employees->firstItem(),
+                    'to' => $employees->lastItem(),
+                ],
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to fetch attendance report',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 
     // Generate attendance report in PDF based on selected date range
     public function downloadAttendanceReportPdf(Request $request)
     {
         try {
             $request->validate([
-                'start_date' => 'required|date',
-                'end_date' => 'required|date|after_or_equal:start_date',
+                'month' => 'required|date_format:Y-m', // e.g. 2025-07
+                'site_name' => 'nullable|string',
+                'department_id' => 'nullable|integer',
             ]);
 
-            $startDate = Carbon::parse($request->start_date)->startOfDay();
-            $endDate = Carbon::parse($request->end_date)->endOfDay();
-            $dateRange = collect();
+            $month = $request->input('month');
+            $siteName = $request->input('site_name');
+            $departmentId = $request->input('department_id');
 
+            // Get start and end date of the month
+            $startDate = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+            $endDate = $startDate->copy()->endOfMonth();
+            $dateRange = collect();
             for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
                 $dateRange->push($date->copy());
             }
 
-            $employees = \App\Models\Employee::with('shift')->get();
-            $reportData = [];
+            // Build employee query with optional filters
+            $employeeQuery = Employee::with('shift', 'department');
+            if ($siteName) {
+                $employeeQuery->where('site_name', $siteName);
+            }
+            if ($departmentId) {
+                $employeeQuery->where('department_id', $departmentId);
+            }
+            $employees = $employeeQuery->get();
 
+            $reportData = [];
             foreach ($employees as $employee) {
                 $dailyStatus = [];
-
                 foreach ($dateRange as $date) {
                     $status = 'A'; // Default to Absent
-
                     $shift = $employee->shift;
                     if (!$shift || !$employee->clock_in || !$employee->clock_out) {
                         $dailyStatus[] = $status;
@@ -67,13 +187,14 @@ class EmployeesController extends Controller
                     ) {
                         $status = 'P';
                     }
-
                     $dailyStatus[] = $status;
                 }
-
                 $reportData[] = [
                     'emp_id' => $employee->emp_id,
                     'name' => $employee->name,
+                    'department' => $employee->department ? $employee->department->name : 'N/A',
+                    'site_name' => $employee->site_name ?: 'N/A',
+                    'shift_timing' => $shift ? Carbon::parse($shift->clock_in)->format('H:i') . ' - ' . Carbon::parse($shift->clock_out)->format('H:i') : 'N/A',
                     'status' => $dailyStatus,
                 ];
             }
@@ -87,13 +208,17 @@ class EmployeesController extends Controller
             ])->setPaper('a4', 'landscape');
 
             $filename = 'attendance_report_' . now()->format('Ymd_His') . '.pdf';
+            
+            // Store the PDF file
             \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $pdf->output());
-
-            $url = asset('storage/' . $filename);
+            
+            // Create a downloadable URL that points to a route
+            $downloadUrl = url('/api/download-pdf/' . $filename);
 
             return response()->json([
                 'message' => 'Attendance PDF generated successfully.',
-                'download_url' => $url
+                'download_url' => $downloadUrl,
+                'filename' => $filename
             ], 200);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -419,5 +544,28 @@ public function update(Request $request, $id)
             return response()->json(['error' => 'An error occurred while deleting the employee: ' . $e->getMessage()], 200);
         }
 
+    }
+
+    // Download PDF file
+    public function downloadPdf($filename)
+    {
+        try {
+            // Validate filename to prevent directory traversal
+            if (!preg_match('/^attendance_report_\d{8}_\d{6}\.pdf$/', $filename)) {
+                return response()->json(['error' => 'Invalid filename'], 400);
+            }
+
+            $filePath = storage_path('app/public/' . $filename);
+            
+            if (!file_exists($filePath)) {
+                return response()->json(['error' => 'File not found'], 404);
+            }
+
+            return response()->download($filePath, $filename, [
+                'Content-Type' => 'application/pdf',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error downloading file: ' . $e->getMessage()], 500);
+        }
     }
 }

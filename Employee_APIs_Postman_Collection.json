@@ -1,0 +1,377 @@
+{
+    "info": {
+        "_postman_id": "attendance-system-employees",
+        "name": "Attendance System - Employee APIs",
+        "description": "Complete collection of all employee-related APIs for the Attendance System",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost/attendence-system/public/api",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "1. Add Employee",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "platform",
+                        "value": "web",
+                        "description": "Required: android, ios, or web"
+                    },
+                    {
+                        "key": "device_token",
+                        "value": "TKN00000001",
+                        "description": "Optional: Valid device token"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"name\": \"John Doe\",\n    \"emp_id\": \"EMP2025001\",\n    \"address\": \"123 Main Street, City, State\",\n    \"account_number\": \"ACC1234567890\",\n    \"aadhar_card\": \"123456789012\",\n    \"mobile_number\": \"9876543210\",\n    \"shift_id\": 1,\n    \"department_id\": 1,\n    \"site_name\": \"Main Office\",\n    \"face_metadata\": \"base64_encoded_face_data\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/employee",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "employee"
+                    ]
+                },
+                "description": "Add a new employee to the system"
+            }
+        },
+        {
+            "name": "2. Get All Employees",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/employee/all?search=&limit=10",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "employee",
+                        "all"
+                    ],
+                    "query": [
+                        {
+                            "key": "search",
+                            "value": "",
+                            "description": "Optional: Search by name, emp_id, or mobile_number"
+                        },
+                        {
+                            "key": "limit",
+                            "value": "10",
+                            "description": "Optional: Number of records per page (default: 10)"
+                        }
+                    ]
+                },
+                "description": "Fetch all employees with pagination and search functionality"
+            }
+        },
+        {
+            "name": "3. Get Single Employee",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/employee/1",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "employee",
+                        "1"
+                    ]
+                },
+                "description": "Fetch a single employee by ID with shift and department details"
+            }
+        },
+        {
+            "name": "4. Update Employee",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "platform",
+                        "value": "web",
+                        "description": "Required: android, ios, or web"
+                    },
+                    {
+                        "key": "device_token",
+                        "value": "TKN00000001",
+                        "description": "Optional: Valid device token"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"name\": \"John Doe Updated\",\n    \"emp_id\": \"EMP2025001\",\n    \"address\": \"456 Updated Street, City, State\",\n    \"account_number\": \"ACC1234567890\",\n    \"aadhar_card\": \"123456789012\",\n    \"mobile_number\": \"9876543210\",\n    \"shift_id\": 2,\n    \"department_id\": 2,\n    \"site_name\": \"Branch Office\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/employee/1/update",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "employee",
+                        "1",
+                        "update"
+                    ]
+                },
+                "description": "Update an existing employee (all fields are optional)"
+            }
+        },
+        {
+            "name": "5. Delete Employee",
+            "request": {
+                "method": "DELETE",
+                "header": [
+                    {
+                        "key": "platform",
+                        "value": "web",
+                        "description": "Required: android, ios, or web"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/employee/1/delete",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "employee",
+                        "1",
+                        "delete"
+                    ]
+                },
+                "description": "Delete an employee by ID"
+            }
+        },
+        {
+            "name": "6. Get Face Embeddings",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/employee/face/metadata/all",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "employee",
+                        "face",
+                        "metadata",
+                        "all"
+                    ]
+                },
+                "description": "Get face embeddings/metadata for all employees"
+            }
+        },
+        {
+            "name": "7. Get Employee Site Radius",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/employee/1/site-radius",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "employee",
+                        "1",
+                        "site-radius"
+                    ]
+                },
+                "description": "Get site radius and location for a specific employee"
+            }
+        },
+        {
+            "name": "8. Update Attendance Time",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"clock_in\": \"2025-01-26 09:00:00\",\n    \"clock_out\": \"2025-01-26 17:00:00\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/employee/1/attendance-take",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "employee",
+                        "1",
+                        "attendance-take"
+                    ]
+                },
+                "description": "Update clock-in and clock-out times for an employee"
+            }
+        },
+        {
+            "name": "9. Get Monthly Attendance Report",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"month\": \"2025-01\",\n    \"site_name\": \"Main Office\",\n    \"department_id\": 1,\n    \"page\": 1,\n    \"limit\": 10\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/employees/monthly-attendance-report",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "employees",
+                        "monthly-attendance-report"
+                    ]
+                },
+                "description": "Get monthly attendance report with optional filters for site, department, and pagination (page: 1-N, limit: 1-100, defaults: page=1, limit=10)"
+            }
+        },
+        {
+            "name": "9a. Get Monthly Attendance Report - Page 2",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"month\": \"2025-01\",\n    \"page\": 2,\n    \"limit\": 20\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/employees/monthly-attendance-report",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "employees",
+                        "monthly-attendance-report"
+                    ]
+                },
+                "description": "Example of getting second page with 20 records per page"
+            }
+        },
+        {
+            "name": "9b. Get Monthly Attendance Report - Basic (No Pagination)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"month\": \"2025-01\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/employees/monthly-attendance-report",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "employees",
+                        "monthly-attendance-report"
+                    ]
+                },
+                "description": "Basic request without pagination parameters (uses defaults: page=1, limit=10)"
+            }
+        },
+        {
+            "name": "10. Generate Attendance Report PDF",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"month\": \"2025-01\",\n    \"site_name\": \"Main Office\",\n    \"department_id\": 1\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/employee/attendance-report-pdf",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "employee",
+                        "attendance-report-pdf"
+                    ]
+                },
+                "description": "Generate attendance report PDF and get downloadable link. Returns JSON with download_url that can be used to download the PDF file."
+            }
+        },
+        {
+            "name": "11. Download PDF File",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/download-pdf/attendance_report_20250730_181156.pdf",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "download-pdf",
+                        "attendance_report_20250730_181156.pdf"
+                    ]
+                },
+                "description": "Download the PDF file using the filename from the previous API response. Replace the filename with the actual filename returned from the generate PDF API."
+            }
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        }
+    ]
+}

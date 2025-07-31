@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Support\Facades\Route;
@@ -30,6 +31,8 @@ Route::get('/employee/{id}', [EmployeesController::class, 'show']);
 Route::get('/employee/{id}/site-radius', [EmployeesController::class, 'getEmployeeSiteRadius']);
 Route::post('/employee/{id}/attendance-take', [EmployeesController::class, 'updateAttendanceTime']);
 Route::post('/employee/attendance-report-pdf', [EmployeesController::class, 'downloadAttendanceReportPdf']);
+Route::post('/employees/monthly-attendance-report', [EmployeesController::class, 'getMonthlyAttendanceReport']);
+Route::get('/download-pdf/{filename}', [EmployeesController::class, 'downloadPdf']);
 
 
 Route::post('/site/add', [SiteController::class, 'add']);
